@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fichas de sustancias químicas · QR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* ============ Colores (señalización NOM-026-STPS) ============ */
+:root{
+  color-scheme: light;
+  --fondo:#E9ECEF; --superficie:#FFFFFF; --tinta:#1A1D21; --tenue:#5A626B; --linea:#CDD2D8;
+  --rojo:#C4161C; --amarillo:#F5B800; --azul:#0057A8; --verde:#00843D;
+  --azul-suave:#E3EEF9; --verde-suave:#E2F3EA; --rojo-suave:#FBE6E6; --amarillo-suave:#FFF5D6;
+  --sobre-rojo:#FFFFFF; --sobre-amarillo:#1A1D21;
+  --etiqueta-fondo:#FFFFFF; --etiqueta-tinta:#000000;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --fondo:#14171A; --superficie:#1F2328; --tinta:#ECEEF0; --tenue:#A3ABB4; --linea:#363C43;
+    --rojo:#E5484D; --amarillo:#F5C542; --azul:#5B9BE0; --verde:#3DB57A;
+    --azul-suave:#1A2A3D; --verde-suave:#16302A; --rojo-suave:#3A1C1E; --amarillo-suave:#3A3115;
+    --sobre-rojo:#FFFFFF; --sobre-amarillo:#14171A;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --fondo:#14171A; --superficie:#1F2328; --tinta:#ECEEF0; --tenue:#A3ABB4; --linea:#363C43;
+  --rojo:#E5484D; --amarillo:#F5C542; --azul:#5B9BE0; --verde:#3DB57A;
+  --azul-suave:#1A2A3D; --verde-suave:#16302A; --rojo-suave:#3A1C1E; --amarillo-suave:#3A3115;
+  --sobre-rojo:#FFFFFF; --sobre-amarillo:#14171A;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--fondo); color:var(--tinta);
+  font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size:17px; line-height:1.5;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--superficie)}
+button,input{font:inherit}
+:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
+
+/* ============ Barra superior ============ */
+.barra{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:5;
+  background:var(--superficie); border-bottom:1px solid var(--linea);
+  display:flex; align-items:center; gap:.75rem; padding:.6rem 1rem;
+}
+.barra h1{font-size:1rem;margin:0;font-weight:700;flex:1}
+.btn{
+  border:2px solid var(--tinta); background:var(--superficie); color:var(--tinta);
+  border-radius:8px; padding:.45rem .9rem; cursor:pointer; font-weight:700;
+}
+.btn.primario{background:var(--azul);border-color:var(--azul);color:#fff}
+.oculto{display:none!important}
+
+main{max-width:640px;margin:0 auto;padding:1rem}
+main.ancho{max-width:960px}
+
+/* ============ Ficha: cabecera tipo etiqueta SGA ============ */
+.etiqueta-sga{background:var(--superficie);border:3px solid var(--tinta);border-radius:6px;overflow:hidden}
+.palabra{padding:.55rem 1rem;font-size:1.6rem;font-weight:700;letter-spacing:.02em}
+.palabra.peligro{background:var(--rojo);color:var(--sobre-rojo)}
+.palabra.atencion{background:var(--amarillo);color:var(--sobre-amarillo)}
+.identidad{padding:1rem 1rem .5rem}
+.identidad h2{font-size:2rem;line-height:1.1;margin:0 0 .25rem}
+.identidad p{margin:0;color:var(--tenue)}
+.pictos{display:flex;flex-wrap:wrap;gap:1rem;padding:.75rem 1rem 1rem}
+.picto{display:flex;flex-direction:column;align-items:center;width:84px;text-align:center;font-size:.8rem;line-height:1.2}
+.picto svg{width:72px;height:72px}
+.datos{display:grid;grid-template-columns:auto 1fr;gap:.15rem .9rem;padding:0 1rem 1rem;font-size:.92rem}
+.datos dt{color:var(--tenue)} .datos dd{margin:0}
+
+/* ============ Secciones ============ */
+.seccion{background:var(--superficie);border-radius:6px;margin-top:1rem;padding:1rem;border-left:6px solid var(--linea)}
+.seccion h3{margin:0 0 .6rem;font-size:1.15rem}
+.seccion ul{margin:0;padding-left:1.2rem} .seccion li{margin:.3rem 0}
+.seccion.epp{border-left-color:var(--azul);background:var(--azul-suave)}
+.seccion.riesgo{border-left-color:var(--rojo);background:var(--rojo-suave)}
+.seccion.derrame{border-left-color:var(--amarillo);background:var(--amarillo-suave)}
+.seccion.auxilio{border-left-color:var(--verde);background:var(--verde-suave)}
+
+/* EPP: discos azules como señal de obligación */
+.epp-lista{list-style:none;padding:0!important;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.6rem}
+.epp-lista li{display:flex;gap:.7rem;align-items:flex-start;margin:0!important}
+.disco{flex:none;width:46px;height:46px;border-radius:50%;background:var(--azul);display:grid;place-items:center;font-size:1.5rem}
+.epp-lista strong{display:block}
+.epp-lista span{font-size:.92rem;color:var(--tenue)}
+
+.frases{font-size:.9rem} .frases code{font-family:inherit;font-weight:700;margin-right:.35rem}
+.tel{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.4rem}
+.tel a{color:var(--tinta);border:2px solid var(--verde);border-radius:8px;padding:.35rem .7rem;text-decoration:none;font-weight:700}
+.pie{font-size:.85rem;color:var(--tenue);margin:1.25rem 0 2rem}
+.pie a{color:var(--azul)}
+
+/* ============ Catálogo ============ */
+.catalogo{list-style:none;padding:0;margin:0;display:grid;gap:.6rem}
+.catalogo button{
+  width:100%;text-align:left;cursor:pointer;background:var(--superficie);color:var(--tinta);
+  border:1px solid var(--linea);border-radius:6px;padding:.75rem 1rem;
+  display:grid;grid-template-columns:1fr auto;gap:.2rem 1rem;align-items:center;
+}
+.catalogo .nombre{font-weight:700;font-size:1.1rem}
+.catalogo .meta{color:var(--tenue);font-size:.88rem}
+.catalogo .mini{grid-row:1 / span 2;grid-column:2;display:flex;gap:.25rem}
+.catalogo .mini svg{width:36px;height:36px}
+.intro{color:var(--tenue);margin:0 0 1rem}
+
+/* ============ Generador de etiquetas ============ */
+.panel{background:var(--superficie);border-radius:6px;padding:1rem;margin-bottom:1rem}
+.panel label{display:block;font-weight:700;margin-bottom:.35rem}
+.panel input{width:100%;padding:.55rem .7rem;border:2px solid var(--linea);border-radius:8px;background:var(--fondo);color:var(--tinta)}
+.panel .acciones{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem}
+.aviso{margin:.6rem 0 0;font-size:.9rem;color:var(--tenue)}
+.hoja{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.label-qr{
+  background:var(--etiqueta-fondo);color:var(--etiqueta-tinta);
+  border:3px solid #000;border-radius:4px;overflow:hidden;break-inside:avoid;
+}
+.label-qr .palabra{font-size:1.15rem;padding:.3rem .7rem}
+.label-qr .cuerpo{display:grid;grid-template-columns:1fr auto;gap:.6rem;padding:.6rem .7rem}
+.label-qr h4{margin:0;font-size:1.15rem;line-height:1.15}
+.label-qr p{margin:.15rem 0 0;font-size:.8rem}
+.label-qr .mini{display:flex;gap:.2rem;margin-top:.4rem}
+.label-qr .mini svg{width:40px;height:40px}
+.label-qr .qr img,.label-qr .qr canvas{width:118px;height:118px;display:block}
+.label-qr .escanea{font-size:.75rem;text-align:center;margin-top:.2rem}
+
+@media print{
+  body{background:#fff}
+  body::before,.barra,.panel,.no-imprimir{display:none!important}
+  main{max-width:none;padding:0}
+  .hoja{grid-template-columns:repeat(2,1fr);gap:6mm}
+  .palabra.peligro,.palabra.atencion{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<header class="barra">
+  <button class="btn oculto" id="btnVolver" type="button">Catálogo</button>
+  <h1 id="tituloBarra">Fichas de sustancias químicas</h1>
+  <button class="btn" id="btnEtiquetas" type="button">Etiquetas QR</button>
+</header>
+
+<main id="app"></main>
+
+<script>
+/* =====================================================================
+   1) CONFIGURACIÓN GENERAL — edita estos datos
+   ===================================================================== */
+const CONFIG = {
+  planta: "Planta de autopartes · Zona Industrial, San Luis Potosí",
+  // Enlace público de esta página. Cada QR apunta a: ENLACE + "#" + id
+  // Déjalo vacío: al subir la página a internet se detecta solo.
+  enlaceBase: "",
+  telefonos: [
+    { texto: "Emergencias 911", numero: "911" },
+    { texto: "Brigada interna (editar)", numero: "0000" }
+  ]
+};
+
+/* =====================================================================
+   2) BASE DE DATOS DE SUSTANCIAS — DATOS DE EJEMPLO
+   Validar cada ficha contra la Hoja de Datos de Seguridad (HDS)
+   del proveedor, conforme a la NOM-018-STPS-2015.
+   Pictogramas disponibles: llama, corrosivo, exclamacion, salud, ambiente
+   El "id" es lo que va después del # en el QR (solo letras, números, - y _).
+   ===================================================================== */
+const SUSTANCIAS = {
+  "acetona": {
+    codigo: "QS-001",
+    nombre: "Acetona",
+    tipo: "Solvente",
+    area: "Ensamble · limpieza de piezas",
+    presentacion: "Bidón de 20 L / piseta de 500 mL",
+    cas: "67-64-1",
+    palabra: "Peligro",
+    pictos: ["llama", "exclamacion"],
+    uso: "Limpieza y desengrase de piezas metálicas antes de pegar o pintar; retiro de residuos de adhesivo en herramentales.",
+    riesgos: [
+      "Líquido y vapores muy inflamables: una chispa o superficie caliente puede encenderlo.",
+      "Los vapores pueden causar mareo o somnolencia en lugares sin ventilación.",
+      "Irrita fuertemente los ojos.",
+      "El contacto repetido reseca y agrieta la piel."
+    ],
+    epp: [
+      { icono: "🥽", nombre: "Lentes de seguridad o goggles", detalle: "Con protección lateral; goggles al trasvasar." },
+      { icono: "🧤", nombre: "Guantes de caucho butilo", detalle: "El nitrilo se degrada rápido con acetona: solo para salpicaduras breves." },
+      { icono: "😷", nombre: "Respirador con cartucho para vapores orgánicos", detalle: "Si no hay extracción o ventilación suficiente." },
+      { icono: "🥼", nombre: "Manga larga de algodón", detalle: "Evitar ropa sintética que genere estática." }
+    ],
+    derrame: [
+      "Apaga o aleja toda fuente de ignición y ventila el área.",
+      "Contén y absorbe con material inerte (absorbente universal o arena).",
+      "Recoge con herramienta antichispa y deposita en contenedor cerrado y etiquetado como residuo peligroso.",
+      "Avisa a tu supervisor y registra el incidente."
+    ],
+    auxilios: [
+      "Ojos: lava con agua en el lavaojos durante 15 minutos, con los párpados abiertos.",
+      "Inhalación: sal a un lugar con aire fresco; si hay mareo persistente, pide atención médica.",
+      "Piel: retira la ropa contaminada y lava con agua y jabón."
+    ],
+    almacenamiento: [
+      "En gabinete para inflamables, lejos de calor, chispas y flamas.",
+      "Envase siempre cerrado y etiquetado.",
+      "No guardar junto a oxidantes fuertes ni ácidos fuertes."
+    ],
+    frasesH: [
+      ["H225", "Líquido y vapores muy inflamables."],
+      ["H319", "Provoca irritación ocular grave."],
+      ["H336", "Puede provocar somnolencia o vértigo."]
+    ],
+    hds: "",          // enlace a la HDS del proveedor (PDF)
+    revision: "2026-10"
+  },
+
+  "isopropilico": {
+    codigo: "QS-002",
+    nombre: "Alcohol isopropílico",
+    tipo: "Solvente de limpieza",
+    area: "Visión artificial · ensamble",
+    presentacion: "Galón de 4 L / piseta de 500 mL",
+    cas: "67-63-0",
+    palabra: "Peligro",
+    pictos: ["llama", "exclamacion"],
+    uso: "Limpieza de superficies antes de aplicar adhesivo; limpieza de lentes de cámaras de visión, sensores y conectores (siempre con el equipo desenergizado).",
+    riesgos: [
+      "Líquido y vapores muy inflamables.",
+      "Irrita los ojos.",
+      "Los vapores pueden causar mareo en espacios cerrados."
+    ],
+    epp: [
+      { icono: "🥽", nombre: "Lentes de seguridad", detalle: "Con protección lateral." },
+      { icono: "🧤", nombre: "Guantes de nitrilo", detalle: "Cambiarlos si se dañan o se empapan." },
+      { icono: "😷", nombre: "Respirador para vapores orgánicos", detalle: "Solo en espacios cerrados o uso prolongado." }
+    ],
+    derrame: [
+      "Elimina fuentes de ignición y ventila.",
+      "Absorbe con material inerte y deposita en contenedor cerrado y etiquetado.",
+      "Avisa a tu supervisor."
+    ],
+    auxilios: [
+      "Ojos: lava con agua durante 15 minutos.",
+      "Inhalación: lleva a la persona a un lugar con aire fresco.",
+      "Ingestión: no provoques el vómito; pide atención médica."
+    ],
+    almacenamiento: [
+      "En gabinete para inflamables, envase cerrado.",
+      "Lejos de oxidantes fuertes."
+    ],
+    frasesH: [
+      ["H225", "Líquido y vapores muy inflamables."],
+      ["H319", "Provoca irritación ocular grave."],
+      ["H336", "Puede provocar somnolencia o vértigo."]
+    ],
+    hds: "",
+    revision: "2026-10"
+  },
+
+  "desengrasante": {
+    codigo: "QS-003",
+    nombre: "Desengrasante alcalino",
+    tipo: "Desengrasante industrial (contiene hidróxido de sodio)",
+    area: "Lavadora de piezas · maquinado",
+    presentacion: "Tambor de 200 L / contenedor de 20 L",
+    cas: "1310-73-2 (hidróxido de sodio)",
+    palabra: "Peligro",
+    pictos: ["corrosivo"],
+    uso: "Lavado de piezas metálicas para quitar aceite de maquinado, grasa y viruta antes de ensamble o inspección.",
+    riesgos: [
+      "Corrosivo: provoca quemaduras graves en piel y daño permanente en ojos.",
+      "Las salpicaduras al trasvasar o diluir son el momento de mayor riesgo.",
+      "Reacciona con aluminio y zinc liberando hidrógeno (gas inflamable).",
+      "Puede corroer metales."
+    ],
+    epp: [
+      { icono: "🥽", nombre: "Goggles de seguridad", detalle: "Sellados contra salpicaduras." },
+      { icono: "🛡️", nombre: "Careta facial", detalle: "Sobre los goggles al trasvasar o diluir." },
+      { icono: "🧤", nombre: "Guantes de nitrilo o neopreno de puño largo", detalle: "Que cubran el antebrazo." },
+      { icono: "🦺", nombre: "Mandil de PVC", detalle: "Resistente a químicos." },
+      { icono: "👢", nombre: "Calzado de seguridad", detalle: "Con suela resistente a químicos." }
+    ],
+    derrame: [
+      "No toques el líquido. Aísla el área y avisa a la brigada.",
+      "Contén con barreras o absorbente para químicos (no aserrín).",
+      "La neutralización solo la hace personal capacitado.",
+      "Lava la zona con abundante agua al final y registra el incidente."
+    ],
+    auxilios: [
+      "Ojos: lavaojos de inmediato, mínimo 15 minutos, y atención médica urgente.",
+      "Piel: quita la ropa contaminada y enjuaga con agua 15 minutos o más.",
+      "Ingestión: enjuaga la boca, no provoques el vómito y pide atención médica."
+    ],
+    almacenamiento: [
+      "En área para corrosivos, con charola de contención.",
+      "Lejos de ácidos y de piezas de aluminio o zinc.",
+      "Diluir siempre agregando el producto al agua, nunca al revés."
+    ],
+    frasesH: [
+      ["H290", "Puede ser corrosivo para los metales."],
+      ["H314", "Provoca graves quemaduras en la piel y lesiones oculares graves."]
+    ],
+    hds: "",
+    revision: "2026-10"
+  },
+
+  "cianoacrilato": {
+    codigo: "QS-004",
+    nombre: "Adhesivo de cianoacrilato",
+    tipo: "Adhesivo instantáneo",
+    area: "Ensamble de componentes",
+    presentacion: "Frasco de 20 g",
+    cas: "7085-85-0",
+    palabra: "Atención",
+    pictos: ["exclamacion"],
+    uso: "Fijación de componentes pequeños, sensores, empaques y tapones durante el ensamble.",
+    riesgos: [
+      "Pega piel y párpados en segundos.",
+      "Irrita ojos, piel y vías respiratorias.",
+      "Con algodón o lana reacciona generando calor y puede quemar."
+    ],
+    epp: [
+      { icono: "🥽", nombre: "Lentes de seguridad", detalle: "Con protección lateral." },
+      { icono: "🧤", nombre: "Guantes de nitrilo o polietileno", detalle: "Nunca guantes de algodón." }
+    ],
+    derrame: [
+      "Agrega agua para que polimerice (endurezca).",
+      "Una vez sólido, raspa y desecha como residuo.",
+      "Ventila si hay olor irritante."
+    ],
+    auxilios: [
+      "Piel pegada: no jales. Remoja en agua tibia con jabón y separa con cuidado.",
+      "Ojos: no fuerces la apertura del párpado; lava con agua y pide atención médica.",
+      "Inhalación: sal a un lugar con aire fresco."
+    ],
+    almacenamiento: [
+      "Lugar fresco y seco, frasco bien cerrado.",
+      "Refrigerar si la HDS del proveedor lo indica."
+    ],
+    frasesH: [
+      ["H315", "Provoca irritación cutánea."],
+      ["H319", "Provoca irritación ocular grave."],
+      ["H335", "Puede irritar las vías respiratorias."],
+      ["EUH202", "Se adhiere a la piel y a los ojos en pocos segundos."]
+    ],
+    hds: "",
+    revision: "2026-10"
+  },
+
+  "hipoclorito": {
+    codigo: "QS-005",
+    nombre: "Hipoclorito de sodio 6 %",
+    tipo: "Desinfectante (cloro)",
+    area: "Limpieza · comedor y sanitarios",
+    presentacion: "Garrafa de 4 L",
+    cas: "7681-52-9",
+    palabra: "Atención",
+    pictos: ["exclamacion"],
+    uso: "Desinfección de áreas comunes, comedor y sanitarios.",
+    riesgos: [
+      "Irrita la piel y los ojos.",
+      "Mezclado con ácidos o amoniaco libera gases tóxicos (cloro, cloraminas).",
+      "Dañino para la vida acuática: no verter concentrado al drenaje."
+    ],
+    epp: [
+      { icono: "🥽", nombre: "Lentes de seguridad", detalle: "Al diluir o trasvasar." },
+      { icono: "🧤", nombre: "Guantes de nitrilo", detalle: "De uso rudo para limpieza." },
+      { icono: "🥼", nombre: "Mandil impermeable", detalle: "Para evitar manchas y contacto con la ropa." }
+    ],
+    derrame: [
+      "Ventila el área. No mezcles con otros productos.",
+      "Diluye con abundante agua y absorbe el resto.",
+      "Avisa a tu supervisor si el derrame es grande."
+    ],
+    auxilios: [
+      "Ojos: lava con agua durante 15 minutos.",
+      "Piel: lava con abundante agua.",
+      "Si inhalaste vapores de una mezcla: sal al aire fresco y pide atención médica."
+    ],
+    almacenamiento: [
+      "Lugar fresco, lejos de la luz del sol.",
+      "Separado de ácidos, amoniaco y otros limpiadores."
+    ],
+    frasesH: [
+      ["H315", "Provoca irritación cutánea."],
+      ["H319", "Provoca irritación ocular grave."],
+      ["EUH031", "En contacto con ácidos libera gases tóxicos."]
+    ],
+    hds: "",
+    revision: "2026-10"
+  }
+};
+
+/* =====================================================================
+   3) PICTOGRAMAS SGA (versión simplificada para pantalla)
+   En la etiqueta física usa los pictogramas oficiales del SGA.
+   ===================================================================== */
+const PICTOS = {
+  llama: { nombre: "Inflamable", glifo:
+    '<path d="M50 24C56 34 64 40 63 53C62 63 56 68 50 68C43 68 37 62 37 54C37 46 42 43 45 36C47 42 50 44 52 45C54 38 53 31 50 24Z"/><rect x="33" y="71" width="34" height="5"/>' },
+  corrosivo: { nombre: "Corrosivo", glifo:
+    '<rect x="30" y="24" width="9" height="18" rx="2" transform="rotate(-25 34 33)"/><circle cx="40" cy="47" r="2.5"/><circle cx="41" cy="53" r="2.5"/>' +
+    '<rect x="61" y="24" width="9" height="18" rx="2" transform="rotate(25 66 33)"/><circle cx="60" cy="47" r="2.5"/><circle cx="59" cy="53" r="2.5"/>' +
+    '<path d="M28 60H46L43 66L40 63L37 68H28Z"/><path d="M54 60H72V68H64L61 64L58 68H54Z"/><rect x="26" y="71" width="48" height="4"/>' },
+  exclamacion: { nombre: "Irritante / nocivo", glifo:
+    '<rect x="45" y="25" width="10" height="33" rx="2"/><circle cx="50" cy="68" r="6"/>' },
+  salud: { nombre: "Peligro para la salud", glifo:
+    '<circle cx="50" cy="33" r="7"/><path d="M36 74C36 55 43 45 50 45C57 45 64 55 64 74Z"/><polygon fill="#fff" points="50,52 52.5,58 59,58 54,62 56,68 50,64 44,68 46,62 41,58 47.5,58"/>' },
+  ambiente: { nombre: "Peligro para el medio ambiente", glifo:
+    '<path d="M33 72L36 40H39L41 72Z"/><path d="M37 46L29 38M38 52L46 44" stroke="#000" stroke-width="2.5"/><ellipse cx="60" cy="64" rx="9" ry="5"/><path d="M68 64L74 59V69Z"/><rect x="26" y="73" width="48" height="3"/>' }
+};
+
+function svgPicto(tipo){
+  const p = PICTOS[tipo]; if(!p) return "";
+  return `<svg viewBox="0 0 100 100" role="img" aria-label="${p.nombre}">
+    <polygon points="50,5 95,50 50,95 5,50" fill="#fff" stroke="#E0001B" stroke-width="7" stroke-linejoin="round"/>
+    <g fill="#000">${p.glifo}</g></svg>`;
+}
+const claseAviso = s => s.palabra === "Peligro" ? "peligro" : "atencion";
+
+/* =====================================================================
+   4) VISTAS
+   ===================================================================== */
+const app = document.getElementById("app");
+const btnVolver = document.getElementById("btnVolver");
+const btnEtiquetas = document.getElementById("btnEtiquetas");
+const tituloBarra = document.getElementById("tituloBarra");
+
+function vistaCatalogo(){
+  tituloBarra.textContent = "Fichas de sustancias químicas";
+  btnVolver.classList.add("oculto"); btnEtiquetas.classList.remove("oculto");
+  app.className = "";
+  const items = Object.entries(SUSTANCIAS).map(([id, s]) => `
+    <li><button type="button" data-id="${id}">
+      <span class="nombre">${s.nombre}</span>
+      <span class="mini">${s.pictos.map(svgPicto).join("")}</span>
+      <span class="meta">${s.codigo} · ${s.palabra} · ${s.area}</span>
+    </button></li>`).join("");
+  app.innerHTML = `
+    <p class="intro">${CONFIG.planta}. Cada envase lleva un QR que abre directamente su ficha.</p>
+    <ul class="catalogo">${items}</ul>
+    <p class="pie">Borrador con datos de ejemplo. Valida cada ficha contra la HDS del proveedor (NOM-018-STPS-2015) y el EPP contra el análisis de riesgos del puesto (NOM-017-STPS-2008).</p>`;
+  app.querySelectorAll("[data-id]").forEach(b => b.addEventListener("click", () => ir(b.dataset.id)));
+}
+
+function vistaFicha(id){
+  const s = SUSTANCIAS[id];
+  tituloBarra.textContent = s.codigo;
+  btnVolver.classList.remove("oculto"); btnEtiquetas.classList.add("oculto");
+  app.className = "";
+  const lista = arr => `<ul>${arr.map(x => `<li>${x}</li>`).join("")}</ul>`;
+  app.innerHTML = `
+    <article>
+      <div class="etiqueta-sga">
+        <div class="palabra ${claseAviso(s)}">${s.palabra}</div>
+        <div class="identidad">
+          <h2>${s.nombre}</h2>
+          <p>${s.tipo}</p>
+        </div>
+        <div class="pictos">${s.pictos.map(t => `<div class="picto">${svgPicto(t)}<span>${PICTOS[t].nombre}</span></div>`).join("")}</div>
+        <dl class="datos">
+          <dt>Código</dt><dd>${s.codigo}</dd>
+          <dt>Área</dt><dd>${s.area}</dd>
+          <dt>Presentación</dt><dd>${s.presentacion}</dd>
+          <dt>CAS</dt><dd>${s.cas}</dd>
+        </dl>
+      </div>
+
+      <section class="seccion epp">
+        <h3>Equipo de protección obligatorio</h3>
+        <ul class="epp-lista">${s.epp.map(e => `
+          <li><span class="disco" aria-hidden="true">${e.icono}</span>
+          <div><strong>${e.nombre}</strong><span>${e.detalle}</span></div></li>`).join("")}
+        </ul>
+      </section>
+
+      <section class="seccion riesgo"><h3>Riesgos</h3>${lista(s.riesgos)}</section>
+      <section class="seccion"><h3>Para qué se usa</h3><p style="margin:0">${s.uso}</p></section>
+      <section class="seccion derrame"><h3>Si hay un derrame</h3>${lista(s.derrame)}</section>
+      <section class="seccion auxilio"><h3>Primeros auxilios</h3>${lista(s.auxilios)}
+        <div class="tel">${CONFIG.telefonos.map(t => `<a href="tel:${t.numero}">${t.texto}</a>`).join("")}</div>
+      </section>
+      <section class="seccion"><h3>Almacenamiento e incompatibilidades</h3>${lista(s.almacenamiento)}</section>
+      <section class="seccion frases"><h3>Indicaciones de peligro (SGA)</h3>
+        ${s.frasesH.map(([c, t]) => `<div><code>${c}</code>${t}</div>`).join("")}
+      </section>
+
+      <p class="pie">
+        ${s.hds ? `<a href="${s.hds}" target="_blank" rel="noopener">Abrir Hoja de Datos de Seguridad completa</a><br>` : "Hoja de Datos de Seguridad: pendiente de vincular.<br>"}
+        Revisión ${s.revision}. Ficha de consulta rápida; no sustituye a la HDS ni a la capacitación.
+      </p>
+    </article>`;
+  window.scrollTo(0, 0);
+}
+
+function vistaEtiquetas(){
+  tituloBarra.textContent = "Etiquetas QR";
+  btnVolver.classList.remove("oculto"); btnEtiquetas.classList.add("oculto");
+  app.className = "ancho";
+  let base = CONFIG.enlaceBase ||
+    (location.protocol.startsWith("http") ? location.origin + location.pathname : "");
+  try { base = localStorage.getItem("enlaceBase") || base; } catch(e) {}
+  app.innerHTML = `
+    <div class="panel">
+      <label for="base">Enlace de esta página</label>
+      <input id="base" type="url" value="${base}" placeholder="https://...">
+      <p class="aviso">Cada QR abrirá este enlace seguido de #id de la sustancia. Si mueves la página a otro sitio (Google Sites, GitHub Pages, intranet), pega aquí el nuevo enlace.</p>
+      <div class="acciones">
+        <button class="btn primario" id="generar" type="button">Generar etiquetas</button>
+        <button class="btn" id="imprimir" type="button">Imprimir</button>
+      </div>
+    </div>
+    <div class="hoja" id="hoja"></div>`;
+  document.getElementById("generar").addEventListener("click", generarEtiquetas);
+  document.getElementById("imprimir").addEventListener("click", () => { try { window.print(); } catch(e) {} });
+  generarEtiquetas();
+}
+
+function generarEtiquetas(){
+  const base = document.getElementById("base").value.trim().replace(/#.*$/, "");
+  try { localStorage.setItem("enlaceBase", base); } catch(e) {}
+  const hoja = document.getElementById("hoja");
+  if(!base){ hoja.innerHTML = `<p class="aviso">Pega el enlace de esta página para generar los códigos.</p>`; return; }
+  hoja.innerHTML = Object.entries(SUSTANCIAS).map(([id, s]) => `
+    <div class="label-qr">
+      <div class="palabra ${claseAviso(s)}">${s.palabra}</div>
+      <div class="cuerpo">
+        <div>
+          <h4>${s.nombre}</h4>
+          <p>${s.codigo} · ${s.area}</p>
+          <div class="mini">${s.pictos.map(svgPicto).join("")}</div>
+        </div>
+        <div><div class="qr" data-url="${base}#${id}"></div><div class="escanea">Escanea antes de usar</div></div>
+      </div>
+    </div>`).join("");
+  hoja.querySelectorAll(".qr").forEach(el => {
+    if (typeof QRCode === "undefined"){ el.textContent = "No se cargó la librería QR"; return; }
+    new QRCode(el, { text: el.dataset.url, width: 236, height: 236, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+  });
+}
+
+/* =====================================================================
+   5) NAVEGACIÓN: el texto después de # decide qué se muestra
+   ===================================================================== */
+function ir(token){
+  if (SUSTANCIAS[token]) vistaFicha(token);
+  else if (token === "etiquetas") vistaEtiquetas();
+  else vistaCatalogo();
+  try { history.replaceState(null, "", token ? "#" + token : location.pathname); } catch(e) {}
+}
+btnVolver.addEventListener("click", () => ir(""));
+btnEtiquetas.addEventListener("click", () => ir("etiquetas"));
+window.addEventListener("hashchange", () => ir(location.hash.slice(1)));
+ir(location.hash.slice(1));
+</script>
+</body>
+</html>
